@@ -1,0 +1,512 @@
+﻿@model MultiTspRouting.WebUI.Models.HomeViewModel
+
+@{
+    ViewData["Title"] = "MultiTsp Route Optimization with Genetic Algorithm";
+}
+
+<div class="text-center text-secondary">
+    <div class="row">
+        <div class="col-12 text-white bg-info" style="margin-bottom: 20px;">
+            <h5 class="font-weight-bolder">MultiTsp Route Optimization with Genetic Algorithm</h5>
+        </div>
+    </div>
+    <form asp-controller="Home" asp-action="Index" enctype="multipart/form-data" method="post">
+        <div class="row">
+            @Html.AntiForgeryToken()
+            <div class="col-lg-3 col-md-4 col-12">
+                <div style="margin: 0 10px 10px 0">
+                    <div class="row">
+                        <label class="col-12 font-weight-bolder text-info" style="margin-bottom: 15px">ENVIRONMENTS</label>
+                    </div>
+                    <div class="row">
+                        <!-- #region Environments-->
+                        <div class="col-12">
+                            <div class="form-group">
+                                <div class="row">
+                                    <label class="col-8 text-left">Mutation Rate</label>
+                                    <input asp-for="GaEnvironments.MutationRate" type="text" class="form-control col-4" id="GaEnvironments.MutationRate" name="GaEnvironments.MutationRate">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <div class="row">
+                                    <label class="col-8 text-left">Two-opt Rate</label>
+                                    <input asp-for="GaEnvironments.TwoOptRate" type="text" class="form-control col-4" id="GaEnvironments.TwoOptRate" name="GaEnvironments.TwoOptRate">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <div class="row">
+                                    <label class="col-8 text-left">Elitism Number</label>
+                                    <input asp-for="GaEnvironments.Elitism" type="number" class="form-control col-4" id="GaEnvironments.Elitism" name="GaEnvironments.Elitism">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <div class="row">
+                                    <label class="col-8 text-left">Population Size</label>
+                                    <input asp-for="GaEnvironments.PopulationSize" type="number" class="form-control col-4" id="GaEnvironments.PopulationSize" name="GaEnvironments.PopulationSize">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <div class="row">
+                                    <label class="col-8 text-left">Iteration Number</label>
+                                    <input asp-for="GaEnvironments.IterationNumber" type="number" class="form-control col-4" id="GaEnvironments.IterationNumber" name="GaEnvironments.IterationNumber">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <div class="row">
+                                    <label class="col-8 text-left">Iteration Termination Percent</label>
+                                    <input asp-for="GaEnvironments.IterationTerminationPercent" type="number" class="form-control col-4" id="GaEnvironments.IterationTerminationPercent" name="GaEnvironments.IterationTerminationPercent">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <div class="row">
+                                    <label class="col-8 text-left">Vehicle Capacity</label>
+                                    <input asp-for="VehicleMaxCapacity" type="number" class="form-control col-4" id="VehicleMaxCapacity" name="VehicleMaxCapacity" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-group">
+                                <div class="row">
+                                    <label class="col-12 text-left">Target Point</label>
+                                    <input asp-for="TargetLat" type="text" class="form-control col-6" id="TargetLat" name="TargetLat" />
+                                    <input asp-for="TargetLng" type="text" class="form-control col-6" id="TargetLng" name="TargetLng" />
+                                </div>
+                            </div>
+                        </div>
+                        <!-- #endregion-->
+                        <!--#region Upload File-->
+                        <div class="col-12" style="margin-top: 20px">
+                            <input id="CoordinateFile" name="CoordinateFile" type="file" class="form-control-file custom-file" accept=".txt,.xls,.xlsx">
+                        </div>
+                        <!--#endregion-->
+                        <!--#region Buttons-->
+                        @*<div class="col-12" style="margin-top: 20px">
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-info mb-5 col-12">With Euclidean Distance</button>
+                            </div>
+                        </div>*@
+                        <div class="col-12" style="margin-top: -40px">
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-success mb-5 col-12" asp-route-withGoogleDistance="true">Run</button>
+                            </div>
+                        </div>
+                        <div class="col-12" style="margin-top: -40px">
+                            <div class="form-group">
+                                <button type="button" class="btn btn-info mb-5 col-12" onclick="initMap();">Show Route on Map</button>
+                            </div>
+                        </div>
+                        <!--#endregion-->
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-9 col-md-8 col-12">
+                <div style="margin: 0 20px 10px 10px">
+                    <div class="row">
+                        <label class="col-12 font-weight-bolder text-info" style="margin-bottom: 15px">RESULTS</label>
+                    </div>
+                    <!--#region Statistical Results-->
+                    <div class="row">
+                        <div class="col-12 border-bottom" style="padding-bottom: 10px">
+                            <table border="1" cellpadding="5" width="100%">
+                                <tr>
+                                    <th style="width: 25%"> Total Iteration </th>
+                                    <th style="width: 25%"> Last Best Iteration </th>
+                                    <th style="width: 25%"> Best Cost </th>
+                                    <th style="width: 25%"> Execution Time </th>
+                                </tr>
+                                <tr>
+                                    <td id="Results.TotalIteration">@Model.Results?.TotalIteration</td>
+                                    <td id="Results.LastIteration">@Model.Results?.LastBestIteration</td>
+                                    <td id="Results.TotalCost">@Model.Results?.BiggestCost</td>
+                                    <td id="Results.ExecutionTime">@Model.Results?.ExecutionTime</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <!--#endregion-->
+                    <!-- #region Route and Map Results-->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="row">
+                                <div class="col-lg-9 col-12">
+                                    <!-- #region Graphic Result-->
+                                    <div class="row">
+                                        <div class="col-12 border-bottom" style="padding-bottom: 10px; margin-top: 15px">
+                                            <div id="chart_div" style="height: 600px;"></div>
+                                        </div>
+                                    </div>
+                                    <!-- #endregion-->
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-lg-12 col-12 border-bottom" style="padding-bottom: 10px; margin-top: 15px">
+                                    <div class="row">
+                                        @if (Model.PartialNodes != null)
+                                        {
+                                            for (var index = 0; index < Model.PartialNodes.Count; index++)
+                                            {
+                                                var nodes = Model.PartialNodes[index];
+                                                <div class="col-6">
+                                                    <table style="border: 2px solid black" cellpadding="1" width="100%">
+                                                        <tr style="border-width: 1px">
+                                                            <th style="width: 20%; border-width: 1px"> No </th>
+                                                            <th style="width: 40%; border-width: 1px"> Latitude </th>
+                                                            <th style="width: 40%; border-width: 1px"> Longitude </th>
+                                                        </tr>
+                                                        <tr>
+                                                            <strong>Cost: @Model.BestRoute.PartialCosts[index]</strong>
+                                                        </tr>
+                                                        @for (int i = 0; i < nodes.Count; i++)
+                                                        {
+                                                            <tr style="border-width: 1px">
+                                                                <td style="border-width: 1px">@nodes[i].No</td>
+                                                                <td style="border-width: 1px">@nodes[i].Lat</td>
+                                                                <td style="border-width: 1px">@nodes[i].Lng</td>
+                                                            </tr>
+                                                        }
+                                                    </table>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <!--#region Google Maps-->
+                            <div class="row">
+                                <div class="col-12 border-bottom" style="padding-bottom: 10px; margin-top: 15px">
+                                    <div id="map" style="min-height:500px"></div>
+                                </div>
+                            </div>
+                            <!--#endregion-->
+                        </div>
+                    </div>
+                    <!-- #endregion-->
+                    <div class="row">
+                        @if (Model.DistanceMatrix != null)
+                        {
+                        <table style="font-size: small; border: 1px solid lightblue">
+                            @for (int i = 0; i <= Model.Nodes.Count; i++)
+                            {
+                                <tr>
+                                    @for (int j = 0; j <= Model.Nodes.Count; j++)
+                                    {
+                                        <td>
+                                            @Model.DistanceMatrix[i,j]
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </table>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section scripts{
+    <!--#region Libraries-->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAo-B0aWdLTIkk49iS8W7WjTL5nTkfIa_c&libraries=&v=weekly" defer></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <!--#endregion-->
+
+    <script type="text/javascript">
+            //#region Line Chart
+            var costResult = @Json.Serialize(Model.CostViewModels);
+
+            if (costResult != null) {
+
+                google.charts.load('current', { packages: ['corechart', 'line'] });
+                google.charts.setOnLoadCallback(drawBasic);
+
+                function drawBasic() {
+
+                    var data = new google.visualization.DataTable();
+                    data.addColumn('number', 'IterationNumber');
+                    data.addColumn('number', 'TotalCost');
+
+                    var dataArray = [];
+                    for (var i = 0; i < costResult.length; i++) {
+                        dataArray.push([costResult[i].iterationNumber, costResult[i].totalCost]);
+                    }
+
+                    data.addRows(dataArray);
+
+                    var options = {
+                        title: 'Total Cost - Iteration Chart',
+                        width: '100%',
+                        chartArea: {
+                            left: "15%",
+                            top: "5%",
+                            height: "80%",
+                            width: "100%"
+                        },
+                    legend: {
+                        position: 'none'
+                    },
+                    hAxis: {
+                        title: 'Iteration Number'
+                    },
+                    vAxis: {
+                        title: 'Total Cost (meter)'
+                    }
+                };
+
+                var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+
+                chart.draw(data, options);
+            }
+            }
+            //#endregion
+
+            //#region initMap
+            function initMap() {
+                //#region map definition
+                map = new google.maps.Map(document.getElementById('map'),
+                    {
+                        zoom: @Model.MapZoom,
+                        center: {
+                            lat: @Json.Serialize(Model.MapCenter?.Lat),
+                            lng: @Json.Serialize(Model.MapCenter?.Lng)
+                        },
+                        disableDefaultUI: true,
+                        styles: styles["hide"]
+                    });
+
+                var directionsService = new google.maps.DirectionsService;
+                var directionsDisplay = new google.maps.DirectionsRenderer({
+                    suppressInfoWindows: true,
+                    suppressMarkers: true
+                });
+                //#endregion
+
+                var coordinates = @Html.Raw(Json.Serialize(Model.PartialNodes));
+
+                var response = {};
+                for (var j = 0; j < coordinates.length; j++) {
+                    var waypts = [];
+                    routeName = "myRoute"+j;
+                    //var waypts = [];
+                    for (var i = 0; i < coordinates[j].length; i++) {
+                        waypts.push([coordinates[j][i].lat, coordinates[j][i].lng, coordinates[j][i].no.toString()]);
+                    }
+                    response[routeName] = {
+                        "points": waypts
+                    }
+                }
+
+                //var response2 = {
+                //    "myRoute0": {
+                //        "points": [
+                //            [28.5435, 77.2051, "1"],
+                //            [28.5313, 77.249, "2"],
+                //            [28.5279, 77.2462, "3"],
+                //            [28.5328, 77.2391, "4"],
+                //            [28.5407, 77.24, "5"],
+                //            [28.543, 77.2139, "6"],
+                //            [28.5429, 77.2095, "7"],
+                //            [28.5332, 77.2071, "8"],
+                //            [28.531, 77.2113, "9"],
+                //            [28.5315, 77.2077, "10"],
+                //            [28.5433, 77.2117, "11"],
+                //            [28.5412, 77.2374, "12"],
+                //            [28.5311, 77.2482, "13"]
+                //        ]
+                //    },
+                //    "myRoute1": {
+                //        "points": [
+                //            [28.5294, 77.2502, "1"],
+                //            [28.5541, 77.2637, "2"],
+                //            [28.5635, 77.2648, "3"],
+                //            [28.5721, 77.2579, "4"],
+                //            [28.5746, 77.2608, "5"],
+                //            [28.5787, 77.2813, "6"],
+                //            [28.5731, 77.3086, "7"],
+                //            [28.5902, 77.336, "8"],
+                //            [28.6252, 77.3735, "9"],
+                //            [28.5735, 77.2748, "10"],
+                //            [28.5621, 77.2679, "11"],
+                //            [28.5646, 77.2708, "12"],
+                //            [28.5887, 77.2713, "13"],
+                //            [28.5631, 77.3186, "14"],
+                //            [28.5802, 77.346, "15"],
+                //            [28.6352, 77.3635, "16"]
+                //        ]
+                //    }
+                //};
+
+                //#region variables
+                var timeout = 100;
+                var m = 0;
+                var cnt = 0;
+                var markers = [];
+                var combinedResults;
+                var directionsResultsReturned = 0;
+                var linecolors = ['#9B59B6', '#154360', '#E74C3C', '#0B5345', '#3498DB', '#1ABC9C', '#F1C40F', '#4A235A',  '#6E2C00', '#7E5109', '#E67E22', '#7B7D7D', '#424949', '#34495E', '#196F3D', '#239B56', '#0089FF', '#7500FF'];
+                //var linecolors = ['green', 'cyan', 'magenta', 'blue', 'red', 'yellow', 'black', 'white'];
+                var colorIdx = 0;
+                var dd = [];
+                //#endregion
+
+                //#region response
+                for (key in response) {
+                    if (response[key].points.length > 0) {
+                        var blocks = [];
+                        var k = 0;
+                        for (var i = 0; i < response[key].points.length; i++) {
+                            if (i != 0 && i % 500 == 0) {
+                                k++;
+                            }
+                            //console.log(k);
+                            if (typeof blocks[k] == 'undefined') {
+                                blocks[k] = [];
+                            }
+
+                            blocks[k].push(response[key].points[i]);
+                        }
+
+                        ds = new google.maps.DirectionsService;
+
+                        for (i = 0; i < blocks.length; i++) {
+                            waypts = [];
+                            markers.push([blocks[i][0][0], blocks[i][0][1], blocks[i][0][2]]);
+                            for (var j = 1; j < blocks[i].length - 1; j++) {
+                                waypts.push({
+                                    location: blocks[i][j][0] + ',' + blocks[i][j][1],
+                                    stopover: true
+                                });
+                                //var myLatlng = new google.maps.LatLng(blocks[i][j][0],blocks[i][j][1]);
+                                markers.push([blocks[i][j][0], blocks[i][j][1], blocks[i][j][2]]);
+
+                            }
+                            markers.push([blocks[i][blocks[i].length - 1][0], blocks[i][blocks[i].length - 1][1], blocks[i][blocks[i].length - 1][2]]);
+
+                            ds.route({
+                                    'origin': blocks[i][0][0] + ',' + blocks[i][0][1],
+                                    'destination': blocks[i][blocks[i].length - 1][0] + ',' + blocks[i][blocks[i].length - 1][1],
+                                    'waypoints': waypts,
+                                    'travelMode': 'DRIVING'
+                                },
+                                function (directions, status) {
+                                    dd.push(new google.maps.DirectionsRenderer({
+                                        suppressInfoWindows: true,
+                                        suppressMarkers: true,
+                                        polylineOptions: {
+                                            strokeColor: linecolors[colorIdx++ % 8]
+                                        },
+                                        map: map
+                                    }));
+
+                                    if (status == google.maps.DirectionsStatus.OK) {
+                                        dd[dd.length - 1].setDirections(directions);
+                                    }
+                                }
+                            );
+
+                        }
+                    }
+
+                    for (h = 0; h < markers.length; h++) {
+                        createMapMarker(map, new google.maps.LatLng(markers[h][0], markers[h][1]), markers[h][2], "", "");
+                    }
+                    cnt++;
+                }
+                //#endregion
+            }
+            //#endregion
+
+            //#region Map style and visual definitions
+            function createMapMarker(map, latlng, label, html, sign) {
+                var marker = new google.maps.Marker({
+                    position: latlng,
+                    map: map,
+                    icon: icon,
+                    title: latlng,
+                    label: {
+                        text: label, //text inside marker
+                        color: '#FFFFFF' //color of the text inside marker
+                    }
+                });
+
+                return marker;
+            }
+
+            var icon = {
+                path: "M172.268 501.67C26.97 291.031 0 269.413 0 192 0 85.961 85.961 0 192 0s192 85.961 192 192c0 77.413-26.97 99.031-172.268 309.67-9.535 13.774-29.93 13.773-39.464 0z", //SVG path of awesomefont marker
+                fillColor: '#008989', //color of the marker
+                fillOpacity: 1,
+                strokeWeight: 1,
+                scale: 0.07, //size of the marker, careful! this scale also affects anchor and labelOrigin
+                anchor: new google.maps.Point(200, 510), //position of the icon, careful! this is affected by scale
+                labelOrigin: new google.maps.Point(205, 190) //position of the label, careful! this is affected by scale
+            }
+
+            const styles = {
+                default: [],
+                hide: [
+                    {
+                        featureType: "administrative",
+                        elementType: "labels",
+                        stylers: [
+                            { visibility: "off" }
+                        ]
+                    }, {
+                        featureType: "administrative.country ",
+                        elementType: "labels",
+                        stylers: [
+                            { visibility: "on" }
+                        ]
+                    }, {
+                        featureType: "landscape",
+                        elementType: "labels",
+                        stylers: [
+                            { visibility: "off" }
+                        ]
+                    }, {
+                        featureType: "poi",
+                        stylers: [
+                            {
+                                visibility: "off",
+                            }
+                        ]
+                    }, {
+                        featureType: "poi.place_of_worship",
+                        stylers: [
+                            {
+                                visibility: "on",
+                            }
+                        ]
+                    }, {
+                        featureType: "poi.school",
+                        stylers: [
+                            {
+                                visibility: "on",
+                            }
+                        ]
+                    }, {
+                        featureType: "transit",
+                        stylers: [
+                            {
+                                visibility: "off",
+                            }
+                        ]
+                    }
+                ]
+            };
+            //#endregion
+    </script>
+}
