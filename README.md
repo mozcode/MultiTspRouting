@@ -26,9 +26,4 @@ To run this project, you will need the following:
 - A valid Google Maps API key
 - Visual Studio or another C# IDE
 
-### Installation
 
-1. Clone the repository to your local machine:
-
-   ```bash
-   git clone https://github.com/yourusername/MultiTspRouting.git
